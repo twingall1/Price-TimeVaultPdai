@@ -191,7 +191,9 @@ async function loadUserLocks() {
 
   const logs = await provider.getLogs({
     address: FACTORY_ADDRESS,
-    topics: [topic, ethers.utils.hexZeroPad(userAddress, 32)]
+    topics: [topic, ownerTopic],
+    fromBlock: 1,
+    toBlock: "latest"
   });
 
   locks = logs.map(log => {
