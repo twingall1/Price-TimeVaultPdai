@@ -12,9 +12,7 @@
       margin: 0;
       padding: 16px;
     }
-    h1, h2 {
-      margin-top: 0;
-    }
+    h1, h2 { margin-top: 0; }
     .card {
       background: #0b1020;
       border-radius: 12px;
@@ -22,14 +20,8 @@
       margin-bottom: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .col {
-      flex: 1 1 280px;
-    }
+    .row { display: flex; flex-wrap: wrap; gap: 16px; }
+    .col { flex: 1 1 280px; }
     input, button {
       padding: 8px 10px;
       border-radius: 8px;
@@ -38,62 +30,30 @@
       color: #f9fafb;
       font-size: 14px;
     }
-    input[type="datetime-local"] {
-      color-scheme: dark;
-    }
+    input[type="datetime-local"] { color-scheme: dark; }
     button {
       cursor: pointer;
       border: none;
       background: #16a34a;
       font-weight: 600;
     }
-    button[disabled] {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    label {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 13px;
-      color: #9ca3af;
-    }
-    .field {
-      margin-bottom: 12px;
-    }
-    .small {
-      font-size: 12px;
-      color: #9ca3af;
-    }
+    button[disabled] { opacity: 0.5; cursor: not-allowed; }
+    label { display: block; margin-bottom: 4px; font-size: 13px; color: #9ca3af; }
+    .field { margin-bottom: 12px; }
+    .small { font-size: 12px; color: #9ca3af; }
     .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      background: #111827;
-      border: 1px solid #1f2937;
-      margin-right: 6px;
-      margin-top: 4px;
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; background: #111827; border: 1px solid #1f2937;
+      margin-right: 6px; margin-top: 4px;
     }
     .status-ok { color: #4ade80; }
     .status-warn { color: #facc15; }
     .status-bad { color: #f87171; }
-    a {
-      color: #60a5fa;
-      text-decoration: none;
-    }
-    a:hover { text-decoration: underline; }
-    .mono {
-      font-family: "JetBrains Mono", "Fira Code", monospace;
-      font-size: 12px;
-    }
+    .mono { font-family: monospace; font-size: 12px; }
   </style>
 </head>
 <body>
   <h1>pDAI Price + Time Lock</h1>
-  <p class="small">
-    Lock <strong>pDAI</strong> until its price (from the <strong>pDAI/DAI PulseX V2 pair</strong>)
-    exceeds your target in DAI, or until a backup date passes.
-  </p>
 
   <div class="card">
     <button id="connectBtn">Connect Wallet</button>
@@ -107,23 +67,13 @@
         <h2>Create New Lock</h2>
         <form id="createForm">
           <div class="field">
-            <label for="targetPrice">
-              Target price (DAI per 1 pDAI)
-            </label>
+            <label for="targetPrice">Target price (DAI per 1 pDAI)</label>
             <input id="targetPrice" type="text" placeholder="e.g. 0.0100" required />
-            <div class="small">
-              This value is stored on-chain and compared against the live pDAI/DAI price.
-            </div>
           </div>
 
           <div class="field">
-            <label for="unlockDateTime">
-              Backup unlock date &amp; time
-            </label>
+            <label for="unlockDateTime">Backup unlock date &amp; time</label>
             <input id="unlockDateTime" type="datetime-local" required />
-            <div class="small">
-              After this time, you can always withdraw, even if the price target is not met.
-            </div>
           </div>
 
           <button type="submit" id="createBtn">Create Vault</button>
@@ -135,9 +85,6 @@
     <div class="col">
       <div class="card">
         <h2>Global Price Feed</h2>
-        <div class="small">
-          From PulseX V2 pair pDAI/DAI:
-        </div>
         <div id="globalPrice" style="margin-top:8px;font-size:14px;"></div>
         <div class="small" id="globalPriceRaw"></div>
       </div>
@@ -146,19 +93,32 @@
 
   <div class="card">
     <h2>Your Locks</h2>
-    <div id="locksContainer" class="small">
-      Connect your wallet to load locks created via this factory.
-    </div>
+    <div id="locksContainer" class="small">Connect your wallet to load locks.</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+
   <script>
     (function () {
-      const FACTORY_ADDRESS = "0xaA5866aAA1184730Dd2926Ed83aCCbD89F128d1d"; // <- replace after deploying
-      const PDAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";
-      const DAI_ADDRESS  = "0xefd766ccb38eaf1dfd701853bfce31359239f305";
+
+      // -----------------------------
+      // 🔥 YOUR REAL ADDRESSES
+      // -----------------------------
+      const FACTORY_ADDRESS = "0xaA5866aAA1184730Dd2926Ed83aCCbD89F128d1d";
+
+      // pDAI (checksummed)
+      const PDAI_ADDRESS = "0x6B175474E89094C44Da98B954EedeAC495271d0F";
+
+      // ❗ TODO: replace this placeholder with the correct DAI contract
+      const DAI_ADDRESS = "0xefd766ccb38eaf1dfd701853bfce31359239f305";
+
+      // PulseX pDAI/DAI pair
       const PAIR_ADDRESS = "0x1D2be6eFf95Ac5C380a8D6a6143b6a97dd9D8712";
 
+
+      // -----------------------------
+      // ABIs
+      // -----------------------------
       const factoryAbi = [
         "event VaultCreated(address indexed owner, address vault, uint256 priceThreshold1e18, uint256 unlockTime)",
         "function createVault(uint256 priceThreshold1e18, uint256 unlockTime) external returns (address)"
@@ -171,28 +131,30 @@
         "function withdrawn() view returns (bool)",
         "function currentPricePDAIinDAI() view returns (uint256)",
         "function canWithdraw() view returns (bool)",
-        "function withdraw() external",
-        "function PDAI() view returns (address)"
-      ];
-
-      const erc20Abi = [
-        "function balanceOf(address) view returns (uint256)",
-        "function decimals() view returns (uint8)"
+        "function withdraw() external"
       ];
 
       const pairAbi = [
         "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)"
       ];
 
-      let provider;
-      let signer;
-      let address;
-      let factory;
-      let pdai;
-      let pairContract;
-      let locks = [];
-      let countdownInterval = null;
+      const erc20Abi = [
+        "function balanceOf(address) view returns (uint256)"
+      ];
 
+
+      // -----------------------------
+      // STATE
+      // -----------------------------
+      let provider, signer, address;
+      let factory, pdai, pairContract;
+      let locks = [];
+      let countdownInterval;
+
+
+      // -----------------------------
+      // UI ELEMENTS
+      // -----------------------------
       const connectBtn = document.getElementById("connectBtn");
       const walletSpan = document.getElementById("walletAddress");
       const networkInfo = document.getElementById("networkInfo");
@@ -205,23 +167,34 @@
       const globalPriceDiv = document.getElementById("globalPrice");
       const globalPriceRawDiv = document.getElementById("globalPriceRaw");
 
+
+      // -----------------------------
+      // CONNECT WALLET (fixed ENS issue)
+      // -----------------------------
       async function connect() {
         try {
           if (!window.ethereum) {
-            alert("No injected wallet found (MetaMask etc).");
+            alert("No injected wallet found.");
             return;
           }
-          provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.send("eth_requestAccounts", []);
-          address = ethers.getAddress(accounts[0]);
+
+          // FIX: define PulseChain network explicitly (disables ENS)
+          provider = new ethers.BrowserProvider(window.ethereum, {
+            name: "pulsechain",
+            chainId: 369
+          });
+
+          await provider.send("eth_requestAccounts", []);
           signer = await provider.getSigner();
+          address = await signer.getAddress();
+
           const network = await provider.getNetwork();
 
           walletSpan.textContent = address;
-          networkInfo.textContent = `Connected to chainId ${network.chainId.toString()}`;
+          networkInfo.textContent = `Connected (chain ${network.chainId})`;
 
           factory = new ethers.Contract(FACTORY_ADDRESS, factoryAbi, signer);
-          pdai = new ethers.Contract(PDAI_ADDRESS, erc20Abi, provider);
+          pdai    = new ethers.Contract(PDAI_ADDRESS, erc20Abi, provider);
           pairContract = new ethers.Contract(PAIR_ADDRESS, pairAbi, provider);
 
           await refreshGlobalPrice();
@@ -229,284 +202,67 @@
 
           if (countdownInterval) clearInterval(countdownInterval);
           countdownInterval = setInterval(updateCountdowns, 1000);
+
         } catch (err) {
           console.error(err);
-          alert("Failed to connect: " + (err.message || err));
+          alert("Connection failed: " + err.message);
         }
       }
 
+
+      // -----------------------------
+      // GLOBAL PRICE FEED
+      // -----------------------------
       async function refreshGlobalPrice() {
-        if (!pairContract) return;
         try {
           const [r0, r1] = await pairContract.getReserves();
-          // r0 = pDAI, r1 = DAI
           if (r0 === 0n || r1 === 0n) {
             globalPriceDiv.textContent = "No liquidity in pDAI/DAI pair.";
-            globalPriceRawDiv.textContent = "";
             return;
           }
           const price1e18 = (r1 * 10n ** 18n) / r0;
           const priceFloat = Number(price1e18) / 1e18;
-          globalPriceDiv.textContent =
-            `Current price: 1 pDAI ≈ ${priceFloat.toFixed(6)} DAI`;
-          globalPriceRawDiv.textContent =
-            `Raw on-chain (1e18): ${price1e18.toString()}`;
+
+          globalPriceDiv.textContent = `1 pDAI ≈ ${priceFloat.toFixed(6)} DAI`;
+          globalPriceRawDiv.textContent = `raw: ${price1e18}`;
         } catch (err) {
           console.error(err);
-          globalPriceDiv.textContent = "Error reading pair price.";
         }
       }
 
-      function parseTargetPriceTo1e18(str) {
-        // ethers.parseUnits handles string decimals conversion
-        return ethers.parseUnits(str.trim(), 18);
-      }
 
-      function format1e18ToFloat(bn) {
-        return Number(ethers.formatUnits(bn, 18));
-      }
-
-      function formatTimestamp(ts) {
-        if (!ts) return "-";
-        const ms = Number(ts) * 1000;
-        return new Date(ms).toLocaleString();
-      }
-
-      function formatCountdown(ts) {
-        const nowSec = Math.floor(Date.now() / 1000);
-        const diff = Number(ts) - nowSec;
-        if (diff <= 0) return "0s";
-
-        const days = Math.floor(diff / 86400);
-        const hrs = Math.floor((diff % 86400) / 3600);
-        const mins = Math.floor((diff % 3600) / 60);
-        const secs = diff % 60;
-
-        const parts = [];
-        if (days) parts.push(`${days}d`);
-        if (hrs || days) parts.push(`${hrs}h`);
-        if (mins || hrs || days) parts.push(`${mins}m`);
-        parts.push(`${secs}s`);
-        return parts.join(" ");
-      }
-
-      async function loadUserLocks() {
-        if (!factory || !address) return;
-
-        locksContainer.textContent = "Loading locks…";
-
-        try {
-          const iface = new ethers.Interface(factoryAbi);
-          const filter = {
-            address: FACTORY_ADDRESS,
-            topics: [
-              iface.getEvent("VaultCreated").topicHash,
-              ethers.hexZeroPad(address, 32) // indexed owner
-            ]
-          };
-          const logs = await provider.getLogs(filter);
-          if (logs.length === 0) {
-            locksContainer.textContent = "No locks found for this wallet.";
-            locks = [];
-            return;
-          }
-
-          locks = [];
-          for (const log of logs) {
-            const parsed = iface.decodeEventLog("VaultCreated", log.data, log.topics);
-            const vaultAddr = parsed.vault;
-            const threshold = parsed.priceThreshold1e18;
-            const unlockTime = parsed.unlockTime;
-            locks.push({
-              address: vaultAddr,
-              threshold,
-              unlockTime,
-              dataLoaded: false,
-              currentPrice: null,
-              canWithdraw: false,
-              withdrawn: false,
-              balance: 0n
-            });
-          }
-
-          await Promise.all(locks.map(loadVaultDetails));
-          renderLocks();
-        } catch (err) {
-          console.error(err);
-          locksContainer.textContent = "Error loading locks: " + (err.message || err);
-        }
-      }
-
-      async function loadVaultDetails(lock) {
-        try {
-          const vault = new ethers.Contract(lock.address, vaultAbi, provider);
-          const [withdrawn, currentPrice, canWithdraw, bal] = await Promise.all([
-            vault.withdrawn(),
-            vault.currentPricePDAIinDAI(),
-            vault.canWithdraw(),
-            pdai.balanceOf(lock.address)
-          ]);
-          lock.withdrawn = withdrawn;
-          lock.currentPrice = currentPrice;
-          lock.canWithdraw = canWithdraw;
-          lock.balance = bal;
-          lock.dataLoaded = true;
-        } catch (err) {
-          console.error("Error loading vault", lock.address, err);
-        }
-      }
-
-      function renderLocks() {
-        if (locks.length === 0) {
-          locksContainer.textContent = "No locks found for this wallet.";
-          return;
-        }
-
-        const parts = [];
-        for (const lock of locks) {
-          const tPrice = format1e18ToFloat(lock.threshold);
-          const current = lock.currentPrice ? format1e18ToFloat(lock.currentPrice) : null;
-          const countdown =
-            lock.withdrawn ? "—" : formatCountdown(lock.unlockTime);
-          const status = lock.withdrawn
-            ? { text: "WITHDRAWN", cls: "status-warn" }
-            : lock.canWithdraw
-            ? { text: "UNLOCKABLE", cls: "status-ok" }
-            : { text: "LOCKED", cls: "status-bad" };
-
-          const balStr = lock.balance
-            ? Number(ethers.formatUnits(lock.balance, 18)).toFixed(4)
-            : "0.0000";
-
-          parts.push(`
-            <div class="card">
-              <div class="mono">${lock.address}</div>
-              <div class="tag ${status.cls}">${status.text}</div>
-              <div style="margin-top:8px;">
-                <div><strong>Target price:</strong> 1 pDAI ≥ ${tPrice.toFixed(6)} DAI</div>
-                <div><strong>Current price:</strong> ${
-                  current !== null ? current.toFixed(6) + " DAI" : "loading…"
-                }</div>
-                <div><strong>Backup unlock time:</strong> ${formatTimestamp(lock.unlockTime)}</div>
-                <div><strong>Countdown:</strong> ${countdown}</div>
-                <div><strong>Locked pDAI:</strong> ${balStr} pDAI</div>
-                <div class="small" style="margin-top:4px;">
-                  To lock more, send pDAI directly to this vault address.
-                </div>
-              </div>
-              <div style="margin-top:10px;">
-                <button
-                  onclick="window.__withdrawFromVault('${lock.address}')"
-                  ${!lock.canWithdraw || lock.withdrawn ? "disabled" : ""}
-                >
-                  Withdraw pDAI
-                </button>
-              </div>
-            </div>
-          `);
-        }
-        locksContainer.innerHTML = parts.join("");
-      }
-
+      // -----------------------------
+      // CREATE NEW VAULT
+      // -----------------------------
       async function handleCreate(e) {
         e.preventDefault();
-        if (!factory || !signer) {
-          alert("Connect wallet first.");
-          return;
-        }
+        if (!factory) return alert("Connect wallet first.");
+
         try {
           createBtn.disabled = true;
-          createStatus.textContent = "Preparing transaction…";
-
-          const targetPriceStr = targetPriceInput.value;
-          if (!targetPriceStr || isNaN(Number(targetPriceStr))) {
-            alert("Enter a numeric target price.");
-            createBtn.disabled = false;
-            createStatus.textContent = "";
-            return;
-          }
-
-          const dtStr = unlockDateTimeInput.value;
-          if (!dtStr) {
-            alert("Select a backup unlock date/time.");
-            createBtn.disabled = false;
-            createStatus.textContent = "";
-            return;
-          }
-
-          const unlockTimestamp = Math.floor(
-            new Date(dtStr).getTime() / 1000
-          );
-          if (unlockTimestamp <= Math.floor(Date.now() / 1000)) {
-            alert("Backup unlock time must be in the future.");
-            createBtn.disabled = false;
-            createStatus.textContent = "";
-            return;
-          }
-
-          const threshold1e18 = parseTargetPriceTo1e18(targetPriceStr);
-
           createStatus.textContent = "Sending transaction…";
-          const tx = await factory.createVault(threshold1e18, unlockTimestamp);
+
+          const rawPrice = targetPriceInput.value.trim();
+          const ts = unlockDateTimeInput.value;
+
+          const threshold1e18 = ethers.parseUnits(rawPrice, 18);
+          const unlockTime = Math.floor(new Date(ts).getTime() / 1000);
+
+          const tx = await factory.createVault(threshold1e18, unlockTime);
           const receipt = await tx.wait();
 
-          const iface = new ethers.Interface(factoryAbi);
-          let newVaultAddr = null;
-          for (const log of receipt.logs) {
-            try {
-              const parsed = iface.decodeEventLog("VaultCreated", log.data, log.topics);
-              if (parsed && parsed.vault) {
-                newVaultAddr = parsed.vault;
-                break;
-              }
-            } catch (e) { /* not our event */ }
-          }
-
-          createStatus.textContent =
-            "Vault created: " + (newVaultAddr || "(address not parsed)");
-          await refreshGlobalPrice();
+          createStatus.textContent = "Vault created.";
           await loadUserLocks();
-          renderLocks();
         } catch (err) {
           console.error(err);
-          createStatus.textContent = "Error: " + (err.message || err);
+          createStatus.textContent = "Error: " + err.message;
         } finally {
           createBtn.disabled = false;
         }
       }
 
-      async function withdrawFromVault(addr) {
-        try {
-          if (!signer) {
-            alert("Connect wallet first.");
-            return;
-          }
-          const vault = new ethers.Contract(addr, vaultAbi, signer);
-          const tx = await vault.withdraw();
-          await tx.wait();
-          await loadUserLocks();
-          renderLocks();
-        } catch (err) {
-          console.error(err);
-          alert("Withdraw failed: " + (err.message || err));
-        }
-      }
 
-      function updateCountdowns() {
-        // Just re-render with updated countdown values
-        if (locks.length === 0) return;
-        renderLocks();
-      }
-
-      // Expose withdraw for inline onclick handlers
-      window.__withdrawFromVault = withdrawFromVault;
-
-      connectBtn.addEventListener("click", connect);
-      createForm.addEventListener("submit", handleCreate);
-
-      // Try to refresh price periodically (for the global display)
-      setInterval(refreshGlobalPrice, 15000);
-    })();
-  </script>
-</body>
-</html>
+      // -----------------------------
+      // LOAD USER LOCKS
+      // -----------------------------
+      async function loadU
