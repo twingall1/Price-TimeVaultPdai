@@ -177,37 +177,43 @@
             alert("No injected wallet found.");
             return;
           }
-
-          // FIX: define PulseChain network explicitly (disables ENS)
-          provider = new ethers.BrowserProvider(window.ethereum, {
+      
+          // Create provider normally (no options allowed)
+          provider = new ethers.BrowserProvider(window.ethereum);
+      
+          // FIX #1: Override network detection (bypass ENS requirement)
+          provider._network = {
             name: "pulsechain",
             chainId: 369
-          });
-
+          };
+      
+          // FIX #2: Disable ENS resolution entirely
+          provider._detectNetwork = async () => provider._network;
+      
+          // Request accounts
           await provider.send("eth_requestAccounts", []);
           signer = await provider.getSigner();
           address = await signer.getAddress();
-
-          const network = await provider.getNetwork();
-
+      
           walletSpan.textContent = address;
-          networkInfo.textContent = `Connected (chain ${network.chainId})`;
-
+          networkInfo.textContent = `Connected to PulseChain (chainId 369)`;
+      
           factory = new ethers.Contract(FACTORY_ADDRESS, factoryAbi, signer);
-          pdai    = new ethers.Contract(PDAI_ADDRESS, erc20Abi, provider);
+          pdai = new ethers.Contract(PDAI_ADDRESS, erc20Abi, provider);
           pairContract = new ethers.Contract(PAIR_ADDRESS, pairAbi, provider);
-
+      
           await refreshGlobalPrice();
           await loadUserLocks();
-
+      
           if (countdownInterval) clearInterval(countdownInterval);
           countdownInterval = setInterval(updateCountdowns, 1000);
-
+      
         } catch (err) {
           console.error(err);
           alert("Connection failed: " + err.message);
         }
       }
+
 
 
       // -----------------------------
