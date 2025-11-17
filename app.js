@@ -149,27 +149,18 @@ createForm.addEventListener("submit", async (e) => {
 
     const priceStr = targetPriceInput.value.trim();
     // Read raw UK-style datetime produced by your input
-    const dtStr = unlockDateTimeInput.value.trim();
+    // Read native datetime-local value (ISO format: "2025-11-22T10:10")
+    const dtISO = unlockDateTimeInput.value.trim();
     
-    // Convert "DD/MM/YYYY HH:MM" into ISO "YYYY-MM-DDTHH:MM"
-    function convertUKDateToISO(str) {
-      // Example input: "26/11/2025 10:10"
-      const parts = str.split(" ");
-      const date  = parts[0];
-      const time  = parts[1] ?? "00:00";
-    
-      const [dd, mm, yyyy] = date.split("/");
-      return `${yyyy}-${mm}-${dd}T${time}`;
-    }
-    
-    const isoStr     = convertUKDateToISO(dtStr);
-    const timestamp  = Date.parse(isoStr);
+    // Convert ISO datetime to unix timestamp
+    const timestamp = Date.parse(dtISO);
     const unlockTime = Math.floor(timestamp / 1000);
     
     if (isNaN(unlockTime)) {
-      alert("Invalid date format. Please enter DD/MM/YYYY HH:MM");
-      throw new Error("Invalid date format.");
+      alert("Invalid datetime. Please use the picker.");
+      throw new Error("Invalid datetime.");
     }
+
     
     const threshold1e18 = ethers.utils.parseUnits(priceStr, 18);
 
