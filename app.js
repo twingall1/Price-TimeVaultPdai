@@ -9,7 +9,7 @@ const ethers = window.ethers;
 // ---------------------------
 // CONTRACT ADDRESSES
 // ---------------------------
-const FACTORY_ADDRESS = "0xaA5866aAA1184730Dd2926Ed83aCCbD89F128d1d";
+const FACTORY_ADDRESS = "0x78aC5861edDd2A25593eDF13a897200BDe33E468";
 const PDAI_ADDRESS    = "0x6B175474E89094C44Da98B954EedeAC495271d0F";
 const DAI_ADDRESS     = "0xefd766ccb38eaf1dfd701853bfce31359239f305";
 const PAIR_ADDRESS    = "0x1D2be6eFf95Ac5C380a8D6a6143b6a97dd9D8712";  
