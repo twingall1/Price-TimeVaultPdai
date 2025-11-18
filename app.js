@@ -184,15 +184,40 @@ async function loadUserLocks() {
   const iface = new ethers.utils.Interface(factoryAbi);
   const topic = iface.getEventTopic("VaultCreated");
 
-  const logs = await readerProvider.getLogs({
-    address: FACTORY_ADDRESS,
-    topics: [
-      topic,
-      ethers.utils.hexZeroPad(userAddress, 32)
-    ],
-    fromBlock: 0,
-    toBlock: "latest"
-  });
+// PulseChain RPC max-block-range = 50k, so scan in chunks
+async function fetchLogsChunked(address, topics, start, end, chunkSize = 50000) {
+  let results = [];
+  for (let from = start; from <= end; from += chunkSize) {
+    const to = Math.min(from + chunkSize - 1, end);
+    console.log(`Scanning blocks ${from} → ${to}`);
+
+    try {
+      const chunk = await readerProvider.getLogs({
+        address,
+        topics,
+        fromBlock: ethers.utils.hexValue(from),
+        toBlock: ethers.utils.hexValue(to)
+      });
+      results = results.concat(chunk);
+    } catch (err) {
+      console.warn("Log chunk failed:", from, to, err.message);
+      // Continue even on failure to avoid losing entire scan
+    }
+  }
+  return results;
+}
+
+//
+// Replace simple getLogs with chunked scan
+//
+const latestBlock = await readerProvider.getBlockNumber();
+
+const logs = await fetchLogsChunked(
+  FACTORY_ADDRESS,
+  [topic, ethers.utils.hexZeroPad(userAddress, 32)],
+  1,
+  latestBlock
+);
 
   locks = logs.map(log => {
     const parsed = iface.decodeEventLog("VaultCreated", log.data, log.topics);
