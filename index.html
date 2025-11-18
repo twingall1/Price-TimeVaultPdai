@@ -80,17 +80,29 @@
     }
 
     /* ----- COPY BUTTON ----- */
-    .copy-btn {
-      background:#1e40af;
-      border:none;
-      color:white;
-      padding:4px 8px;
-      margin-left:6px;
+    .copy-icon-btn {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:28px;
+      height:28px;
+      min-width:28px;
+      min-height:28px;
       border-radius:6px;
+      background:#1e40af;   /* blue box */
       cursor:pointer;
-      font-weight:bold;
     }
-    .copy-btn:hover { background:#1d4ed8; }
+    
+    .copy-icon-btn:hover {
+      background:#1d4ed8;
+    }
+    
+    .copy-icon-btn svg {
+      width:16px;
+      height:16px;
+      fill:white;
+      display:block;
+    }
   </style>
 </head>
 
