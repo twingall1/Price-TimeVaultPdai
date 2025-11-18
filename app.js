@@ -189,10 +189,14 @@ async function loadUserLocks() {
   const iface = new ethers.utils.Interface(factoryAbi);
   const topic = iface.getEventTopic("VaultCreated");
 
+  // IMPORTANT: PulseChain RPC needs explicit block range
   const logs = await provider.getLogs({
     address: FACTORY_ADDRESS,
-    topics: [topic, ownerTopic],
-    fromBlock: 1,
+    topics: [
+      topic,
+      ethers.utils.hexZeroPad(userAddress, 32)   // THIS IS THE OWNER FILTER
+    ],
+    fromBlock: 0,
     toBlock: "latest"
   });
 
@@ -212,7 +216,6 @@ async function loadUserLocks() {
   await Promise.all(locks.map(loadVaultDetails));
   renderLocks();
 }
-
 async function loadVaultDetails(lock) {
   const vault = new ethers.Contract(lock.address, vaultAbi, provider);
 
