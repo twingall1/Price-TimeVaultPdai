@@ -370,14 +370,29 @@ function renderLocks() {
       <div class="card vault-card ${lock.canWithdraw ? 'vault-unlockable' : ''}">
         
         <!-- Address + copy -->
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;width:100%;max-width:450px;">
           <input class="mono"
             value="${lock.address}"
             readonly
-            style="background:#020617;border:1px solid #4b5563;width:100%;padding:4px;border-radius:6px;" />
-
-          <button class="copy-btn" onclick="copyAddr('${lock.address}')">📋</button>
+            style="
+              background:#020617;
+              color:#a5b4fc;
+              border:1px solid #4b5563;
+              width:100%;
+              padding:4px;
+              border-radius:6px;
+            " />
+        
+          <div class="copy-icon-btn" onclick="copyAddr('${lock.address}')">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 
+                       0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 
+                       2-.9 2-2V7c0-1.1-.9-2-2-2zm0 
+                       16H8V7h11v14z"/>
+            </svg>
+          </div>
         </div>
+
 
         ${status}
 
