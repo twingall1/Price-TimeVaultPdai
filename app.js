@@ -41,6 +41,7 @@ const erc20Abi = [
   "function balanceOf(address) view returns (uint256)"
 ];
 
+
 // ---------------------------
 // STATE
 // ---------------------------
@@ -49,7 +50,9 @@ let factory, pdai, pairContract;
 let locks = [];
 let countdownInterval;
 
-// UI
+// ---------------------------
+// UI Elements
+// ---------------------------
 const connectBtn        = document.getElementById("connectBtn");
 const walletSpan        = document.getElementById("walletAddress");
 const networkInfo       = document.getElementById("networkInfo");
@@ -93,6 +96,7 @@ async function connect() {
 
   } catch (err) {
     alert("Connection failed: " + err.message);
+    console.error(err);
   }
 }
 
@@ -126,4 +130,232 @@ setInterval(refreshGlobalPrice, 15000);
 function getLocalVaults() {
   return JSON.parse(localStorage.getItem("vaults-" + userAddress) || "[]");
 }
-function saveLocalVault(vaultAddr
+
+function saveLocalVault(vaultAddr) {
+  let list = getLocalVaults();
+  if (!list.includes(vaultAddr)) {
+    list.push(vaultAddr);
+    localStorage.setItem("vaults-" + userAddress, JSON.stringify(list));
+  }
+}
+
+async function loadLocalVaults() {
+  locks = [];
+  const list = getLocalVaults();
+
+  if (!list.length) {
+    locksContainer.textContent = "No locks found.";
+    return;
+  }
+
+  locks = list.map(addr => ({
+    address: addr,
+    threshold: null,
+    unlockTime: null,
+    balance: ethers.constants.Zero,
+    currentPrice: ethers.constants.Zero,
+    canWithdraw: false,
+    withdrawn: false
+  }));
+
+  await Promise.all(locks.map(loadVaultDetails));
+  renderLocks();
+}
+
+// ---------------------------
+// MANUAL VAULT ADD
+// ---------------------------
+addVaultBtn.addEventListener("click", async () => {
+  const addr = manualVaultInput.value.trim();
+  if (!ethers.utils.isAddress(addr)) {
+    manualAddStatus.textContent = "Invalid address.";
+    return;
+  }
+  saveLocalVault(addr);
+  manualAddStatus.textContent = "Vault added.";
+  manualVaultInput.value = "";
+  await loadLocalVaults();
+});
+
+// ---------------------------
+// CREATE VAULT
+// ---------------------------
+createForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (!signer) {
+    alert("Connect wallet first.");
+    return;
+  }
+
+  try {
+    createBtn.disabled = true;
+    createStatus.textContent = "Sending...";
+
+    const priceStr = targetPriceInput.value.trim();
+    const threshold1e18 = ethers.utils.parseUnits(priceStr, 18);
+
+    const dtISO = unlockDateTimeInput.value.trim();
+    const timestamp = Date.parse(dtISO);
+    const unlockTime = Math.floor(timestamp / 1000);
+
+    if (isNaN(unlockTime)) {
+      alert("Invalid datetime.");
+      throw new Error("Invalid datetime.");
+    }
+
+    const tx = await factory.createVault(threshold1e18, unlockTime);
+    const receipt = await tx.wait();
+
+    // Extract vault address from logs
+    const event = receipt.logs.
+      map(l => {
+        try { return ifaceDecode("VaultCreated", l); }
+        catch { return null; }
+      })
+      .find(x => x !== null);
+
+    let vault;
+    if (event) vault = event.vault;
+    else {
+      // As fallback: detect contract created by tx
+      vault = receipt.contractAddress || null;
+    }
+
+    if (vault) {
+      saveLocalVault(vault);
+      createStatus.textContent = "Vault created: " + vault;
+      await loadLocalVaults();
+    } else {
+      createStatus.textContent = "Vault created (address unknown). Add manually if needed.";
+    }
+
+  } catch (err) {
+    createStatus.textContent = "Error: " + err.message;
+    console.error(err);
+  } finally {
+    createBtn.disabled = false;
+  }
+});
+
+// Helper to decode
+function ifaceDecode(name, log) {
+  const iface = new ethers.utils.Interface(factoryAbi);
+  return iface.parseLog(log).args;
+}
+
+// ---------------------------
+// LOAD VAULT DETAILS
+// ---------------------------
+async function loadVaultDetails(lock) {
+  try {
+    const vault = new ethers.Contract(lock.address, vaultAbi, walletProvider);
+
+    const [
+      withdrawn,
+      currentPrice,
+      canWithdraw,
+      balance,
+      threshold,
+      utime
+    ] = await Promise.all([
+      vault.withdrawn(),
+      vault.currentPricePDAIinDAI(),
+      vault.canWithdraw(),
+      pdai.balanceOf(lock.address),
+      vault.priceThreshold(),
+      vault.unlockTime()
+    ]);
+
+    lock.withdrawn = withdrawn;
+    lock.currentPrice = currentPrice;
+    lock.canWithdraw = canWithdraw;
+    lock.balance = balance;
+    lock.threshold = threshold;
+    lock.unlockTime = utime.toNumber();
+
+  } catch (err) {
+    console.error("Vault load error:", lock.address, err);
+  }
+}
+
+// ---------------------------
+// RENDER LOCKS
+// ---------------------------
+function renderLocks() {
+  if (!locks.length) {
+    locksContainer.textContent = "No locks found.";
+    return;
+  }
+
+  locksContainer.innerHTML = locks.map(lock => {
+    const target = lock.threshold
+      ? parseFloat(ethers.utils.formatUnits(lock.threshold, 18))
+      : 0;
+    const current = parseFloat(ethers.utils.formatUnits(lock.currentPrice, 18));
+    const bal = parseFloat(ethers.utils.formatUnits(lock.balance, 18));
+    const countdown = formatCountdown(lock.unlockTime);
+
+    let status =
+      lock.withdrawn
+        ? '<span class="tag status-warn">WITHDRAWN</span>'
+        : lock.canWithdraw
+        ? '<span class="tag status-ok">UNLOCKABLE</span>'
+        : '<span class="tag status-bad">LOCKED</span>';
+
+    return `
+      <div class="card">
+        <div class="mono">${lock.address}</div>
+        ${status}
+        <div><strong>Target:</strong> 1 pDAI ≥ ${target.toFixed(6)} DAI</div>
+        <div><strong>Current:</strong> ${current.toFixed(6)} DAI</div>
+        <div><strong>Backup unlock:</strong> ${formatTimestamp(lock.unlockTime)}</div>
+        <div><strong>Countdown:</strong> ${countdown}</div>
+        <div><strong>Locked:</strong> ${bal.toFixed(4)} pDAI</div>
+        <button onclick="withdrawVault('${lock.address}')"
+          ${(!lock.canWithdraw || lock.withdrawn) ? "disabled" : ""}>
+          Withdraw
+        </button>
+      </div>
+    `;
+  }).join("");
+}
+
+// ---------------------------
+// WITHDRAW
+// ---------------------------
+async function withdrawVault(addr) {
+  try {
+    const vault = new ethers.Contract(addr, vaultAbi, signer);
+    const tx = await vault.withdraw();
+    await tx.wait();
+    await loadLocalVaults();
+  } catch (err) {
+    alert("Withdraw failed: " + err.message);
+  }
+}
+
+// ---------------------------
+// UTILITIES
+// ---------------------------
+function formatTimestamp(ts) {
+  return new Date(ts * 1000).toLocaleString();
+}
+
+function formatCountdown(ts) {
+  const now = Math.floor(Date.now() / 1000);
+  let diff = ts - now;
+  if (diff <= 0) return "0s";
+
+  const d = Math.floor(diff / 86400); diff %= 86400;
+  const h = Math.floor(diff / 3600);  diff %= 3600;
+  const m = Math.floor(diff / 60);
+  const s = diff % 60;
+
+  const parts = [];
+  if (d) parts.push(d + "d");
+  if (h) parts.push(h + "h");
+  if (m) parts.push(m + "m");
+  parts.push(s + "s");
+  return parts.join(" ");
+}
