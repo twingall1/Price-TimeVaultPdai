@@ -370,6 +370,7 @@ function renderLocks() {
       <div class="card vault-card ${lock.canWithdraw ? 'vault-unlockable' : ''}">
         
         <!-- Address + copy -->
+        
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;width:100%;max-width:450px;">
           <input class="mono"
             value="${lock.address}"
@@ -392,6 +393,7 @@ function renderLocks() {
             </svg>
           </div>
         </div>
+
 
 
         ${status}
