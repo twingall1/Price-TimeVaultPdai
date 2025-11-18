@@ -427,11 +427,8 @@ async function withdrawVault(addr) {
 // COPY ADDRESS TO CLIPBOARD
 // -----------------------------------
 function copyAddr(addr) {
-  navigator.clipboard.writeText(addr).then(() => {
-    alert("Copied: " + addr);
-  }).catch(err => {
+  navigator.clipboard.writeText(addr).catch(err => {
     console.error("Copy failed:", err);
-    alert("Copy failed");
   });
 }
 
