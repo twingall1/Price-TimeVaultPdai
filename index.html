@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    /* ----- DARK THEME FOR pDAI VERSION ----- */
+    /* ----- ORIGINAL DARK THEME (unchanged) ----- */
     body {
       font-family: system-ui, sans-serif;
       background: #050815;
@@ -14,104 +14,74 @@
       margin: 0;
       padding: 16px;
     }
-
-    h1, h2 {
-      margin-top: 0;
-      color: #60a5fa; /* soft blue */
-    }
+    h1, h2 { margin-top: 0; color:#ffffff; }
 
     .card {
       background: #0b1020;
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 20px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-      border: 1px solid #1f2937;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border: 1px solid #1e2638;
     }
 
-    .row {
-      display:flex;
-      flex-wrap:wrap;
-      gap:16px;
-    }
+    .row { display:flex; flex-wrap:wrap; gap:16px; }
+    .col { flex:1 1 280px; }
 
-    .col {
-      flex:1 1 280px;
-    }
-
-    input,button {
+    input, button {
       padding:8px 10px;
       border-radius:8px;
-      border:1px solid #334155;
-      background:#1e293b;
-      color:#f8fafc;
+      border:1px solid #4b5563;
+      background:#020617;
+      color:#f9fafb;
       font-size:14px;
-    }
-
-    input::placeholder {
-      color:#7fa2ca;
     }
 
     button {
       cursor:pointer;
       border:none;
-      background:#3b82f6;
-      color:white;
+      background:#16a34a;
       font-weight:600;
-      transition:background 0.2s;
+      transition:background .2s;
     }
+    button:hover { background:#1fc556; }
+    button[disabled] { opacity:.5; cursor:not-allowed; }
 
-    button:hover {
-      background:#1d4ed8;
-    }
+    .small { font-size:12px; color:#9ca3af; }
 
-    button[disabled] {
-      opacity:0.4;
-      cursor:not-allowed;
-    }
-
-    .small {
-      font-size:12px;
-      color:#94a3b8;
-    }
-
-    /* STATUS TAGS */
     .tag {
       display:inline-block;
       padding:2px 8px;
       border-radius:999px;
       font-size:11px;
-      background:#1e2535;
-      border:1px solid #475569;
+      background:#111827;
+      border:1px solid #1f2937;
       margin-right:6px;
       margin-top:4px;
-      color:#93c5fd;
     }
-
-    .status-ok   { color:#4ade80; }
+    .status-ok { color:#4ade80; }
     .status-warn { color:#facc15; }
-    .status-bad  { color:#f87171; }
+    .status-bad { color:#f87171; }
 
     .mono {
       font-family:Courier, monospace;
       font-size:13px;
-      color:#93c5fd;
+      color:#a5b4fc;
       user-select:text !important;
     }
 
-    /* Unlockable glow */
+    /* ----- UNLOCKABLE GREEN GLOW ----- */
     .vault-card {
-      transition:box-shadow .3s, border .3s;
+      transition: box-shadow .3s, border .3s;
     }
-
     .vault-unlockable {
       box-shadow:0 0 18px 4px rgba(0,255,140,0.45);
-      border:1px solid #22c55e !important;
+      border:1px solid #22ff99 !important;
     }
 
-    /* Copy button */
+    /* ----- COPY BUTTON ----- */
     .copy-btn {
-      background:#3b82f6;
+      background:#1e40af;
       border:none;
       color:white;
       padding:4px 8px;
@@ -120,10 +90,7 @@
       cursor:pointer;
       font-weight:bold;
     }
-
-    .copy-btn:hover {
-      background:#2563eb;
-    }
+    .copy-btn:hover { background:#1d4ed8; }
   </style>
 </head>
 
@@ -139,14 +106,12 @@
   <div class="card">
     <h2>About This App</h2>
     <div class="small">
-      • This vault locks pDAI until price or time unlocks.<br>
-      • Deposit pDAI by sending pDAI to the vault address.<br>
-      • Withdraw once price or backup time conditions are met.<br><br>
-
-      <b>Price feed:</b> pDAI/DAI PulseX V2.<br>
-      <b>Unlock check:</b> performed fully on-chain.<br>
-      <b>Recovery:</b> Add your vault address manually anytime.<br>
-      <b>Storage:</b> This UI only stores addresses locally.
+      • Lock pDAI until price/time conditions are met.<br>
+      • Deposit pDAI by sending tokens directly to the vault address.<br>
+      • Withdraw once price threshold or backup unlock time is met.<br><br>
+      • All metadata (threshold & unlock time) is stored <b>on-chain</b>.<br>
+      • Vault addresses are stored locally for convenience.<br>
+      • You can re-add vaults manually using “Add Vault Address”.<br>
     </div>
   </div>
 
@@ -156,12 +121,12 @@
         <h2>Create New Lock</h2>
         <form id="createForm">
           <label>Target price (DAI per 1 pDAI)</label>
-          <input id="targetPrice" type="text" placeholder="0.0020" required />
+          <input id="targetPrice" type="text" placeholder="0.0035" required />
 
-          <label>Backup unlock date &amp; time</label>
+          <label>Backup unlock date & time</label>
           <input id="unlockDateTime" type="datetime-local" required />
 
-          <button id="createBtn" type="submit">Create Vault</button>
+          <button type="submit" id="createBtn">Create Vault</button>
           <div id="createStatus" class="small"></div>
         </form>
       </div>
@@ -178,8 +143,7 @@
 
   <div class="card">
     <h2>Add Vault Address Manually</h2>
-    <div class="small">Paste any vault address created by your wallet.</div>
-    <input id="manualVaultInput" type="text" placeholder="0x..." style="width:70%" />
+    <input id="manualVaultInput" type="text" placeholder="0x..." style="width:70%;" />
     <button id="addVaultBtn">Add Vault</button>
     <div id="manualAddStatus" class="small"></div>
   </div>
@@ -191,6 +155,5 @@
 
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="app.js"></script>
-
 </body>
 </html>
