@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>pDAI Price+Time Lock</title>
+  <title>pDAI Price + Time Lock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -65,6 +65,22 @@
     <div class="small" id="networkInfo"></div>
   </div>
 
+  <div class="card" style="background:#111;">
+    <h2>About This App</h2>
+    <div class="small">
+      • Each vault is a standalone smart contract you own.<br>
+      • To DEPOSIT pDAI: simply send pDAI to the vault address.<br>
+      • To WITHDRAW: click the Withdraw button once conditions are met.<br><br>
+      <b>Vault Discovery:</b><br>
+      PulseChain RPC servers restrict log-scanning (CORS + block-range limits).<br>
+      This app therefore stores your vault addresses locally (in this browser).<br>
+      If you switch browser/device, you can add vaults manually below.<br><br>
+      • Local vault storage is private to your device.<br>
+      • You can add vaults created elsewhere using “Add Vault Address”.<br>
+      • Your funds remain on-chain regardless of the UI.<br>
+    </div>
+  </div>
+
   <div class="row">
     <div class="col">
       <div class="card">
@@ -72,11 +88,11 @@
         <form id="createForm">
           <div class="field">
             <label for="targetPrice">Target price (DAI per 1 pDAI)</label>
-            <input id="targetPrice" type="text" placeholder="0.0100" required />
+            <input id="targetPrice" type="text" placeholder="0.0020" required />
           </div>
 
           <div class="field">
-            <label for="unlockDateTime">Backup unlock date &amp; time</label>
+            <label for="unlockDateTime">Backup unlock date & time</label>
             <input id="unlockDateTime" type="datetime-local" required />
           </div>
 
@@ -93,6 +109,17 @@
         <div class="small" id="globalPriceRaw"></div>
       </div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Add Vault Address Manually</h2>
+    <div class="small">
+      If you created vaults on another device or cleared local storage,<br>
+      enter a vault contract address to load it.
+    </div>
+    <input id="manualVaultInput" type="text" placeholder="0x..." style="width:70%;" />
+    <button id="addVaultBtn">Add Vault</button>
+    <div id="manualAddStatus" class="small"></div>
   </div>
 
   <div class="card">
