@@ -253,24 +253,23 @@ async function loadVaultDetails(lock) {
       currentPrice,
       canWithdraw,
       balance,
-      unlockTimeOnChain,
-      thresholdOnChain
+      threshold,
+      unlockTime
     ] = await Promise.all([
       vault.withdrawn(),
       vault.currentPricePDAIinDAI(),
       vault.canWithdraw(),
       pdai.balanceOf(lock.address),
-      vault.unlockTime(),
-      vault.priceThreshold()
+      vault.priceThreshold(),
+      vault.unlockTime()
     ]);
 
-    lock.withdrawn = withdrawn;
+    lock.withdrawn   = withdrawn;
     lock.currentPrice = currentPrice;
-    lock.canWithdraw = canWithdraw;
-    lock.balance = balance;
-
-    if (!lock.unlockTime) lock.unlockTime = unlockTimeOnChain.toNumber();
-    if (!lock.threshold)  lock.threshold  = thresholdOnChain;
+    lock.canWithdraw  = canWithdraw;
+    lock.balance      = balance;
+    lock.threshold    = threshold;           // ALWAYS from chain
+    lock.unlockTime   = unlockTime.toNumber(); // ALWAYS from chain
 
   } catch (err) {
     console.error("Vault load error:", lock.address, err);
