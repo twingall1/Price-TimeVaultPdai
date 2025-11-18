@@ -386,24 +386,7 @@ function renderLocks() {
         <div><strong>Backup unlock:</strong> ${formatTimestamp(lock.unlockTime)}</div>
         <div><strong>Countdown:</strong> ${countdown}</div>
 
-        <!-- Time progress bar -->
-        <div style="margin-top:8px;">
-          <div class="small">Time Progress</div>
-          <div style="
-            background:#020617;
-            width:100%;
-            height:10px;
-            border-radius:5px;
-            overflow:hidden;
-            border:1px solid #4b5563;">
-            <div style="
-              width:${progressPct}%;
-              height:100%;
-              background:#16a34a;
-              transition:width 1s linear;
-            "></div>
-          </div>
-        </div>
+
 
         <div style="margin-top:8px;">
           <strong>Locked:</strong> ${bal.toFixed(4)} pDAI
