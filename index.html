@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
+    /* ----- DARK THEME FOR pDAI VERSION ----- */
     body {
       font-family: system-ui, sans-serif;
       background: #050815;
@@ -13,46 +14,116 @@
       margin: 0;
       padding: 16px;
     }
-    h1, h2 { margin-top: 0; }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #60a5fa; /* soft blue */
+    }
+
     .card {
       background: #0b1020;
       border-radius: 12px;
       padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-    .row { display: flex; flex-wrap: wrap; gap: 16px; }
-    .col { flex: 1 1 280px; }
-    input, button {
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #4b5563;
-      background: #020617;
-      color: #f9fafb;
-      font-size: 14px;
-    }
-    button {
-      cursor: pointer;
-      border: none;
-      background: #16a34a;
-      font-weight: 600;
-    }
-    button[disabled] { opacity: 0.5; cursor: not-allowed; }
-    .small { font-size: 12px; color: #9ca3af; }
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      background: #111827;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
       border: 1px solid #1f2937;
-      margin-right: 6px;
-      margin-top: 4px;
     }
-    .status-ok { color: #4ade80; }
-    .status-warn { color: #facc15; }
-    .status-bad { color: #f87171; }
-    .mono { font-family: monospace; font-size: 12px; }
+
+    .row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+    }
+
+    .col {
+      flex:1 1 280px;
+    }
+
+    input,button {
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid #334155;
+      background:#1e293b;
+      color:#f8fafc;
+      font-size:14px;
+    }
+
+    input::placeholder {
+      color:#7fa2ca;
+    }
+
+    button {
+      cursor:pointer;
+      border:none;
+      background:#3b82f6;
+      color:white;
+      font-weight:600;
+      transition:background 0.2s;
+    }
+
+    button:hover {
+      background:#1d4ed8;
+    }
+
+    button[disabled] {
+      opacity:0.4;
+      cursor:not-allowed;
+    }
+
+    .small {
+      font-size:12px;
+      color:#94a3b8;
+    }
+
+    /* STATUS TAGS */
+    .tag {
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      background:#1e2535;
+      border:1px solid #475569;
+      margin-right:6px;
+      margin-top:4px;
+      color:#93c5fd;
+    }
+
+    .status-ok   { color:#4ade80; }
+    .status-warn { color:#facc15; }
+    .status-bad  { color:#f87171; }
+
+    .mono {
+      font-family:Courier, monospace;
+      font-size:13px;
+      color:#93c5fd;
+      user-select:text !important;
+    }
+
+    /* Unlockable glow */
+    .vault-card {
+      transition:box-shadow .3s, border .3s;
+    }
+
+    .vault-unlockable {
+      box-shadow:0 0 18px 4px rgba(0,255,140,0.45);
+      border:1px solid #22c55e !important;
+    }
+
+    /* Copy button */
+    .copy-btn {
+      background:#3b82f6;
+      border:none;
+      color:white;
+      padding:4px 8px;
+      margin-left:6px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    .copy-btn:hover {
+      background:#2563eb;
+    }
   </style>
 </head>
 
@@ -65,19 +136,17 @@
     <div class="small" id="networkInfo"></div>
   </div>
 
-  <div class="card" style="background:#111;">
+  <div class="card">
     <h2>About This App</h2>
     <div class="small">
-      • Each vault is a standalone smart contract you own.<br>
-      • To DEPOSIT pDAI: simply send pDAI to the vault address.<br>
-      • To WITHDRAW: click the Withdraw button once conditions are met.<br><br>
-      <b>Vault Discovery:</b><br>
-      PulseChain RPC servers restrict log-scanning (CORS + block-range limits).<br>
-      This app therefore stores your vault addresses locally (in this browser).<br>
-      If you switch browser/device, you can add vaults manually below.<br><br>
-      • Local vault storage is private to your device.<br>
-      • You can add vaults created elsewhere using “Add Vault Address”.<br>
-      • Your funds remain on-chain regardless of the UI.<br>
+      • This vault locks pDAI until price or time unlocks.<br>
+      • Deposit pDAI by sending pDAI to the vault address.<br>
+      • Withdraw once price or backup time conditions are met.<br><br>
+
+      <b>Price feed:</b> pDAI/DAI PulseX V2.<br>
+      <b>Unlock check:</b> performed fully on-chain.<br>
+      <b>Recovery:</b> Add your vault address manually anytime.<br>
+      <b>Storage:</b> This UI only stores addresses locally.
     </div>
   </div>
 
@@ -86,18 +155,14 @@
       <div class="card">
         <h2>Create New Lock</h2>
         <form id="createForm">
-          <div class="field">
-            <label for="targetPrice">Target price (DAI per 1 pDAI)</label>
-            <input id="targetPrice" type="text" placeholder="0.0020" required />
-          </div>
+          <label>Target price (DAI per 1 pDAI)</label>
+          <input id="targetPrice" type="text" placeholder="0.0020" required />
 
-          <div class="field">
-            <label for="unlockDateTime">Backup unlock date & time</label>
-            <input id="unlockDateTime" type="datetime-local" required />
-          </div>
+          <label>Backup unlock date &amp; time</label>
+          <input id="unlockDateTime" type="datetime-local" required />
 
-          <button type="submit" id="createBtn">Create Vault</button>
-          <div class="small" id="createStatus"></div>
+          <button id="createBtn" type="submit">Create Vault</button>
+          <div id="createStatus" class="small"></div>
         </form>
       </div>
     </div>
@@ -106,28 +171,24 @@
       <div class="card">
         <h2>Global Price Feed</h2>
         <div id="globalPrice"></div>
-        <div class="small" id="globalPriceRaw"></div>
+        <div id="globalPriceRaw" class="small"></div>
       </div>
     </div>
   </div>
 
   <div class="card">
     <h2>Add Vault Address Manually</h2>
-    <div class="small">
-      If you created vaults on another device or cleared local storage,<br>
-      enter a vault contract address to load it.
-    </div>
-    <input id="manualVaultInput" type="text" placeholder="0x..." style="width:70%;" />
+    <div class="small">Paste any vault address created by your wallet.</div>
+    <input id="manualVaultInput" type="text" placeholder="0x..." style="width:70%" />
     <button id="addVaultBtn">Add Vault</button>
     <div id="manualAddStatus" class="small"></div>
   </div>
 
   <div class="card">
     <h2>Your Locks</h2>
-    <div id="locksContainer" class="small">Connect wallet to load locks.</div>
+    <div id="locksContainer" class="small">Connect wallet to load.</div>
   </div>
 
-  <!-- Load ethers THEN load our app --->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="app.js"></script>
 
