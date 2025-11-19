@@ -9,17 +9,17 @@ const ethers = window.ethers;
 // -----------------------------------
 // CONTRACT ADDRESSES (ALL LOWERCASE)
 // -----------------------------------
-// ✨ IMPORTANT: replace with your actual pDAI vault factory V2 address
-const FACTORY_ADDRESS = "0x78aC5861edDd2A25593eDF13a897200BDe33E468".toLowerCase();
+// Using your actual deployed pDAI factory address
+const FACTORY_ADDRESS = "0x78ac5861eddd2a25593edf13a897200bde33e468";
 
-// pDAI ERC20 token address
-const PDAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f".toLowerCase();
+// pDAI ERC20 token on PulseChain
+const PDAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";
 
 // True DAI on PulseChain
-const DAI_ADDRESS  = "0xefd766ccb38eaf1dfd701853bfce31359239f305".toLowerCase();
+const DAI_ADDRESS  = "0xefd766ccb38eaf1dfd701853bfce31359239f305";
 
-// PulseX v2 pair: pDAI / DAI (token0 = pDAI, token1 = DAI)
-const PAIR_ADDRESS = "0x1d2be6eff95ac5c380a8d6a6143b6a97dd9d8712".toLowerCase();
+// PulseX V2 pDAI/DAI pair
+const PAIR_ADDRESS = "0x1d2be6eff95ac5c380a8d6a6143b6a97dd9d8712";
 
 
 // -----------------------------------
@@ -117,14 +117,14 @@ connectBtn.addEventListener("click", connect);
 
 
 // -----------------------------------
-// DETERMINE LIQUIDITY PAIR ORDERING (token0 == pDAI?)
+// DETERMINE LIQUIDITY PAIR ORDERING
 // -----------------------------------
 async function detectPairOrder() {
   try {
     const token0 = (await pairContract.token0()).toLowerCase();
     pairToken0IsPDAI = (token0 === PDAI_ADDRESS);
   } catch {
-    pairToken0IsPDAI = true;  // fallback
+    pairToken0IsPDAI = true;
   }
 }
 
@@ -151,8 +151,9 @@ async function refreshGlobalPrice() {
     }
 
     const price = daiRes.mul(ethers.constants.WeiPerEther).div(pdaiRes);
-    const float = parseFloat(ethers.utils.formatUnits(price, 18));
+    const float = Number(ethers.utils.formatUnits(price, 18));
 
+    // Keep your 6-decimal display (you prefer this)
     globalPriceDiv.textContent = `1 pDAI ≈ ${float.toFixed(6)} DAI`;
     globalPriceRawDiv.textContent = `raw 1e18: ${price.toString()}`;
 
@@ -196,7 +197,7 @@ function removeVault(addr) {
 
 
 // -----------------------------------
-// MANUAL ADD VAULT
+// MANUAL ADD
 // -----------------------------------
 addVaultBtn.addEventListener("click", async () => {
   if (!userAddress) {
@@ -240,7 +241,7 @@ createForm.addEventListener("submit", async e => {
 
     const unlockTime = Math.floor(ts / 1000);
 
-    const tx = await factory.createVault(th1e18, unlockTime);
+    const tx   = await factory.createVault(th1e18, unlockTime);
     const rcpt = await tx.wait();
 
     const iface = new ethers.utils.Interface(factoryAbi);
@@ -249,8 +250,10 @@ createForm.addEventListener("submit", async e => {
     for (const log of rcpt.logs) {
       try {
         const p = iface.parseLog(log);
-        if (p.name === "VaultCreated")
+        if (p.name === "VaultCreated") {
           vaultAddr = p.args.vault;
+          break;
+        }
       } catch {}
     }
 
@@ -348,16 +351,31 @@ function renderLocks() {
   }
 
   locksContainer.innerHTML = locks.map(lock => {
-    const target = lock.threshold
-      ? parseFloat(ethers.utils.formatUnits(lock.threshold, 18))
+    // Display values (keep your 6-decimal formatting)
+    const targetFloat  = lock.threshold
+      ? Number(ethers.utils.formatUnits(lock.threshold, 18))
       : 0;
 
-    const current = parseFloat(ethers.utils.formatUnits(lock.currentPrice, 18));
-    const bal     = parseFloat(ethers.utils.formatUnits(lock.balance, 18));
-    const countdown = formatCountdown(lock.unlockTime);
+    const currentFloat = Number(ethers.utils.formatUnits(lock.currentPrice, 18));
+    const bal          = Number(ethers.utils.formatUnits(lock.balance, 18));
+    const countdown    = formatCountdown(lock.unlockTime);
 
-    const nowTs = Math.floor(Date.now() / 1000);
-    const progressPct = (timeProgress(nowTs, lock.unlockTime) * 100).toFixed(2);
+    // --- PRICE GOAL PERCENTAGE (FULL PRECISION, MATCHES CONTRACT) ---
+    let priceGoalPct = 0;
+
+    if (lock.threshold && lock.threshold.gt(0)) {
+      // Full precision: (currentPrice * 10000) / threshold → basis points
+      const pctBN = lock.currentPrice.mul(10000).div(lock.threshold);
+      priceGoalPct = pctBN.toNumber() / 100; // 2 decimal places
+    }
+
+    // Clamp 0–100
+    priceGoalPct = Math.max(0, Math.min(100, priceGoalPct));
+
+    // Force 100% when unlockable by price
+    if (lock.canWithdraw && lock.currentPrice.gte(lock.threshold)) {
+      priceGoalPct = 100;
+    }
 
     let status =
       lock.withdrawn
@@ -370,7 +388,6 @@ function renderLocks() {
       <div class="card vault-card ${lock.canWithdraw ? 'vault-unlockable' : ''}">
         
         <!-- Address + copy -->
-        
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;width:100%;max-width:450px;">
           <input class="mono"
             value="${lock.address}"
@@ -383,7 +400,7 @@ function renderLocks() {
               padding:4px;
               border-radius:6px;
             " />
-        
+
           <div class="copy-icon-btn" onclick="copyAddr('${lock.address}')">
             <svg viewBox="0 0 24 24">
               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 
@@ -394,19 +411,43 @@ function renderLocks() {
           </div>
         </div>
 
-
-
         ${status}
 
-        <div><strong>Target:</strong> 1 pDAI ≥ ${target.toFixed(6)} DAI</div>
-        <div><strong>Current:</strong> ${current.toFixed(6)} DAI</div>
-        <div><strong>Backup unlock:</strong> ${formatTimestamp(lock.unlockTime)}</div>
-        <div><strong>Countdown:</strong> ${countdown}</div>
+        <!-- Metrics & Price Goal Pie (snug horizontal layout) -->
+        <div style="
+          display:flex;
+          flex-direction:row;
+          align-items:flex-start;
+          gap:16px;
+          margin-top:10px;
+          flex-wrap:nowrap;
+          width:fit-content;
+          max-width:100%;
+        ">
 
+          <!-- LEFT: Metrics -->
+          <div style="display:flex;flex-direction:column;flex:0 1 auto;">
+            <div><strong>Target:</strong> 1 pDAI ≥ ${targetFloat.toFixed(6)} DAI</div>
+            <div><strong>Current:</strong> ${currentFloat.toFixed(6)} DAI</div>
+            <div><strong>Backup unlock:</strong> ${formatTimestamp(lock.unlockTime)}</div>
+            <div><strong>Countdown:</strong> ${countdown}</div>
 
+            <div style="margin-top:8px;">
+              <strong>Locked:</strong> ${bal.toFixed(4)} pDAI
+            </div>
+          </div>
 
-        <div style="margin-top:8px;">
-          <strong>Locked:</strong> ${bal.toFixed(4)} pDAI
+          <!-- RIGHT: Price goal pie chart -->
+          <div class="price-goal-wrapper" style="flex:0 0 auto;margin-left:8px;">
+            <div class="small" style="text-align:center;">Price goal</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="price-goal-pie"
+                   style="background:conic-gradient(#00aa44 ${priceGoalPct}%, #020617 0);">
+              </div>
+              <div class="small">${priceGoalPct.toFixed(0)}%</div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Withdraw -->
@@ -441,7 +482,7 @@ async function withdrawVault(addr) {
 }
 
 // -----------------------------------
-// COPY ADDRESS TO CLIPBOARD
+// COPY ADDRESS TO CLIPBOARD (silent)
 // -----------------------------------
 function copyAddr(addr) {
   navigator.clipboard.writeText(addr).catch(err => {
@@ -450,7 +491,7 @@ function copyAddr(addr) {
 }
 
 // -----------------------------------
-// TIME PROGRESS HELPER
+// TIME PROGRESS HELPER (unchanged)
 // -----------------------------------
 function timeProgress(now, unlockTime, thresholdTime = 0) {
   if (now >= unlockTime) return 1;
@@ -492,4 +533,3 @@ function formatCountdown(ts) {
 // -----------------------------------
 // END OF FILE
 // -----------------------------------
-
