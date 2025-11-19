@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    /* ----- ORIGINAL DARK THEME (unchanged) ------ */
+    /* ----- ORIGINAL DARK THEME (unchanged baseline) ------ */
     body {
       font-family: system-ui, sans-serif;
       background: #050815;
@@ -102,6 +102,24 @@
       height:16px;
       fill:white;
       display:block;
+    }
+
+    /* ----- PIE CHART (same size as PLS, dark theme) ----- */
+    .price-goal-wrapper {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      gap:4px;
+      min-width:70px;
+    }
+
+    .price-goal-pie {
+      width:56px;
+      height:56px;
+      border-radius:50%;
+      background:#020617;         /* dark interior */
+      border:1px solid #e5e7eb;   /* light border */
     }
   </style>
 </head>
