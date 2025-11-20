@@ -9,17 +9,10 @@ const ethers = window.ethers;
 // -----------------------------------
 // CONTRACT ADDRESSES (ALL LOWERCASE)
 // -----------------------------------
-// Using your actual deployed pDAI factory address
 const FACTORY_ADDRESS = "0x78ac5861eddd2a25593edf13a897200bde33e468";
-
-// pDAI ERC20 token on PulseChain
-const PDAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";
-
-// True DAI on PulseChain
-const DAI_ADDRESS  = "0xefd766ccb38eaf1dfd701853bfce31359239f305";
-
-// PulseX V2 pDAI/DAI pair
-const PAIR_ADDRESS = "0x1d2be6eff95ac5c380a8d6a6143b6a97dd9d8712";
+const PDAI_ADDRESS    = "0x6b175474e89094c44da98b954eedeac495271d0f";
+const DAI_ADDRESS     = "0xefd766ccb38eaf1dfd701853bfce31359239f305";
+const PAIR_ADDRESS    = "0x1d2be6eff95ac5c380a8d6a6143b6a97dd9d8712";
 
 
 // -----------------------------------
@@ -80,6 +73,19 @@ const manualVaultInput    = document.getElementById("manualVaultInput");
 const addVaultBtn         = document.getElementById("addVaultBtn");
 const manualAddStatus     = document.getElementById("manualAddStatus");
 
+// 🔥 -------------- NETWORK WARNING BANNER --------------
+const networkPrompt = document.getElementById("networkPrompt");
+
+// 🔥 Check if user is on PulseChain (369)
+async function checkNetwork() {
+  const { chainId } = await walletProvider.getNetwork();
+  if (chainId !== 369) {
+    networkPrompt.style.display = "block";
+  } else {
+    networkPrompt.style.display = "none";
+  }
+}
+
 
 // -----------------------------------
 // CONNECT WALLET
@@ -94,6 +100,9 @@ async function connect() {
     const net = await walletProvider.getNetwork();
     walletSpan.textContent = userAddress;
     networkInfo.textContent = `Connected (chainId: ${net.chainId})`;
+
+    // 🔥 Check correct network after connecting
+    await checkNetwork();
 
     factory      = new ethers.Contract(FACTORY_ADDRESS, factoryAbi, signer);
     pdaiToken    = new ethers.Contract(PDAI_ADDRESS, erc20Abi, walletProvider);
@@ -114,8 +123,6 @@ async function connect() {
   }
 }
 connectBtn.addEventListener("click", connect);
-
-
 // -----------------------------------
 // DETERMINE LIQUIDITY PAIR ORDERING
 // -----------------------------------
@@ -153,7 +160,6 @@ async function refreshGlobalPrice() {
     const price = daiRes.mul(ethers.constants.WeiPerEther).div(pdaiRes);
     const float = Number(ethers.utils.formatUnits(price, 18));
 
-    // Keep your 6-decimal display (you prefer this)
     globalPriceDiv.textContent = `1 pDAI ≈ ${float.toFixed(6)} DAI`;
     globalPriceRawDiv.textContent = `raw 1e18: ${price.toString()}`;
 
@@ -337,10 +343,6 @@ async function loadVaultDetails(lock) {
     console.error("Vault load error:", lock.address, err);
   }
 }
-
-// --------------
-// PART 1 END
-// --------------
 // -----------------------------------
 // RENDER LOCK CARDS
 // -----------------------------------
@@ -351,7 +353,7 @@ function renderLocks() {
   }
 
   locksContainer.innerHTML = locks.map(lock => {
-    // Display values (keep your 6-decimal formatting)
+
     const targetFloat  = lock.threshold
       ? Number(ethers.utils.formatUnits(lock.threshold, 18))
       : 0;
@@ -360,19 +362,15 @@ function renderLocks() {
     const bal          = Number(ethers.utils.formatUnits(lock.balance, 18));
     const countdown    = formatCountdown(lock.unlockTime);
 
-    // --- PRICE GOAL PERCENTAGE (FULL PRECISION, MATCHES CONTRACT) ---
     let priceGoalPct = 0;
 
     if (lock.threshold && lock.threshold.gt(0)) {
-      // Full precision: (currentPrice * 10000) / threshold → basis points
       const pctBN = lock.currentPrice.mul(10000).div(lock.threshold);
-      priceGoalPct = pctBN.toNumber() / 100; // 2 decimal places
+      priceGoalPct = pctBN.toNumber() / 100;
     }
 
-    // Clamp 0–100
     priceGoalPct = Math.max(0, Math.min(100, priceGoalPct));
 
-    // Force 100% when unlockable by price
     if (lock.canWithdraw && lock.currentPrice.gte(lock.threshold)) {
       priceGoalPct = 100;
     }
@@ -387,7 +385,6 @@ function renderLocks() {
     return `
       <div class="card vault-card ${lock.canWithdraw ? 'vault-unlockable' : ''}">
         
-        <!-- Address + copy -->
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;width:100%;max-width:450px;">
           <input class="mono"
             value="${lock.address}"
@@ -400,7 +397,6 @@ function renderLocks() {
               padding:4px;
               border-radius:6px;
             " />
-
           <div class="copy-icon-btn" onclick="copyAddr('${lock.address}')">
             <svg viewBox="0 0 24 24">
               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 
@@ -413,31 +409,16 @@ function renderLocks() {
 
         ${status}
 
-        <!-- Metrics & Price Goal Pie (snug horizontal layout) -->
-        <div style="
-          display:flex;
-          flex-direction:row;
-          align-items:flex-start;
-          gap:16px;
-          margin-top:10px;
-          flex-wrap:nowrap;
-          width:fit-content;
-          max-width:100%;
-        ">
+        <div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px;margin-top:10px;flex-wrap:nowrap;width:fit-content;max-width:100%;">
 
-          <!-- LEFT: Metrics -->
           <div style="display:flex;flex-direction:column;flex:0 1 auto;">
             <div><strong>Target:</strong> 1 pDAI ≥ ${targetFloat.toFixed(6)} DAI</div>
             <div><strong>Current:</strong> ${currentFloat.toFixed(6)} DAI</div>
             <div><strong>Backup unlock:</strong> ${formatTimestamp(lock.unlockTime)}</div>
             <div><strong>Countdown:</strong> ${countdown}</div>
-
-            <div style="margin-top:8px;">
-              <strong>Locked:</strong> ${bal.toFixed(4)} pDAI
-            </div>
+            <div style="margin-top:8px;"><strong>Locked:</strong> ${bal.toFixed(4)} pDAI</div>
           </div>
 
-          <!-- RIGHT: Price goal pie chart -->
           <div class="price-goal-wrapper" style="flex:0 0 auto;margin-left:8px;">
             <div class="small" style="text-align:center;">Price goal</div>
             <div style="display:flex;align-items:center;gap:6px;">
@@ -450,13 +431,11 @@ function renderLocks() {
 
         </div>
 
-        <!-- Withdraw -->
         <button onclick="withdrawVault('${lock.address}')"
           ${(!lock.canWithdraw || lock.withdrawn) ? "disabled" : ""}>
           Withdraw
         </button>
 
-        <!-- Remove -->
         <button onclick="removeVault('${lock.address}')"
           style="margin-left:10px;background:#b91c1c;">
           Remove
@@ -466,6 +445,8 @@ function renderLocks() {
     `;
   }).join("");
 }
+
+
 // -----------------------------------
 // WITHDRAW
 // -----------------------------------
@@ -481,8 +462,9 @@ async function withdrawVault(addr) {
   }
 }
 
+
 // -----------------------------------
-// COPY ADDRESS TO CLIPBOARD (silent)
+// COPY ADDRESS
 // -----------------------------------
 function copyAddr(addr) {
   navigator.clipboard.writeText(addr).catch(err => {
@@ -490,8 +472,9 @@ function copyAddr(addr) {
   });
 }
 
+
 // -----------------------------------
-// TIME PROGRESS HELPER (unchanged)
+// TIME PROGRESS HELPER
 // -----------------------------------
 function timeProgress(now, unlockTime, thresholdTime = 0) {
   if (now >= unlockTime) return 1;
@@ -500,6 +483,7 @@ function timeProgress(now, unlockTime, thresholdTime = 0) {
   if (total <= 0) return 1;
   return Math.max(0, Math.min(1, done / total));
 }
+
 
 // -----------------------------------
 // UTILITIES
@@ -530,6 +514,8 @@ function formatCountdown(ts) {
   return parts.join(" ");
 }
 
+
 // -----------------------------------
 // END OF FILE
 // -----------------------------------
+
