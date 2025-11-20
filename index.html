@@ -136,10 +136,29 @@
   </h1>
 
   <div class="card">
+  
+    <!-- 🔥 Network Warning Banner (Dark Theme) -->
+    <div id="networkPrompt" 
+         style="display:none; 
+                background-color:#7f1d1d; 
+                color:white;
+                padding:10px;
+                margin-bottom:12px;
+                border-radius:8px;
+                text-align:center;
+                font-weight:bold;
+                border:1px solid #b91c1c;">
+      ⚠️ Please switch to PulseChain (Chain ID: 369) in your wallet.<br>
+      <span style="font-size:13px; font-weight:normal;">
+        In OKX Wallet: open <b>“DApp Connection”</b> and change network to <b>PulseChain</b>.
+      </span>
+    </div>
+  
     <button id="connectBtn">Connect Wallet</button>
     <span id="walletAddress" class="mono"></span>
     <div class="small" id="networkInfo"></div>
   </div>
+
 
   <div class="card">
     <h2>About This App</h2>
